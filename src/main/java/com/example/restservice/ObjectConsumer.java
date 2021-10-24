@@ -1,0 +1,38 @@
+package com.example.restservice;
+
+import org.apache.kafka.clients.consumer.*;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.springframework.kafka.support.serializer.JsonDeserializer;
+import org.springframework.kafka.support.serializer.JsonSerializer;
+
+import java.util.Arrays;
+import java.util.Properties;
+
+public class ObjectConsumer {
+
+    public static void main(String[] args) throws InterruptedException {
+        Properties props = new Properties();
+
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "192.168.0.102:9092");
+        props.put(ConsumerConfig.GROUP_ID_CONFIG ,"kafeidou_group") ;
+        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true");
+        props.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "1000");
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+//        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+        props.put(JsonDeserializer.TYPE_MAPPINGS, "user:com.example.restservice.User");
+
+        props.put("auto.offset.reset", "earliest");
+
+        Consumer<String, User> consumer = new KafkaConsumer<>(props);
+        consumer.subscribe(Arrays.asList("kafeidou"));
+
+        while (true) {
+            Thread.sleep(3000L);
+            ConsumerRecords<String, User> records = consumer.poll(1000);
+            for (ConsumerRecord<String, User> record : records) {
+                System.out.printf("【消费消息】 offset = %d, key = %s, value = %s%n", record.offset(), record.key(),  record.value());
+            }
+        }
+    }
+}
